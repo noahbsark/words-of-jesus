@@ -12,7 +12,7 @@
  const normalizeRef=s=>(s||'').replace(/,\s*(\d)/g,':$1').replace(/\.(\s*)$/,'').replace(/(\d)-(\d)/g,'$1–$2');
  const flat=[]; state.data.sections.forEach((sec,si)=>sec.items.forEach(it=>flat.push({...it,section:sec,si,era:eraFor(si)})));
  $('#total').textContent=flat.length; $('#sectionsCount').textContent=state.data.sections.length;
- function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));}
+ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
  function hl(s,q){if(!q)return esc(s);const e=q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');return esc(s).replace(new RegExp('('+e+')','ig'),'<mark>$1</mark>');}
  function bookOf(sec,it){const r=(it.reference||sec.source||'').trim();return (r.match(/^(Matthew|Mark|Luke|John|Acts|Revelation|Hebrews|1 Corinthians|2 Corinthians)/)||[])[1]||'Other';}
  function matches(x){const q=state.q.trim().toLowerCase(),book=bookOf(x.section,x);if(state.era!=='all'&&x.era!==+state.era)return false;if(state.book!=='all'&&book!==state.book)return false;if(!q)return true;return (x.text+' '+x.section.title+' '+x.section.source+' '+(x.reference||'')).toLowerCase().includes(q)}
