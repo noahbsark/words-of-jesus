@@ -1,5 +1,5 @@
 window.SITE_CONFIG = {
-  adsensePublisher: "",
+  adsensePublisher: "ca-pub-6136525087204092",
   adSlots: { hero: "", inContent: "", footer: "" },
   amazonTag: "wordofjesus-20"
 };
