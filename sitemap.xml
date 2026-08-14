@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://everywordofjesus.com/</loc></url>
-<url><loc>https://everywordofjesus.com/about.html</loc></url>
-<url><loc>https://everywordofjesus.com/resources.html</loc></url>
-<url><loc>https://everywordofjesus.com/privacy.html</loc></url>
-<url><loc>https://everywordofjesus.com/terms.html</loc></url>
-<url><loc>https://everywordofjesus.com/contact.html</loc></url>
+  <url><loc>https://everywordofjesus.com/</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/topics/</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/topics/prayer/</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/topics/faith/</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/topics/forgiveness/</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/topics/kingdom-of-god/</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/topics/money/</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/topics/seven-sayings-from-the-cross/</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/about.html</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/resources.html</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/privacy.html</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/terms.html</loc><lastmod>2026-08-14</lastmod></url>
+  <url><loc>https://everywordofjesus.com/contact.html</loc><lastmod>2026-08-14</lastmod></url>
 </urlset>
