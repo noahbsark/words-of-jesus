@@ -5,12 +5,15 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   submit:
     runs-on: ubuntu-latest
     steps:
       - name: Check out site
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -37,6 +40,8 @@ jobs:
               ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
               return {n.text.strip() for n in root.findall("s:url/s:loc", ns) if n.text}
 
+          # Manual runs intentionally submit the current sitemap. Normal pushes
+          # notify only materially changed public pages.
           full = event == "workflow_dispatch" or not before or before == "0" * 40
           changed = []
           if not full:
@@ -50,11 +55,6 @@ jobs:
                           changed.append(parts[-1])
               except Exception:
                   full = True
-
-          # The first commit that installs this workflow should notify the whole
-          # freshly launched site. Future pushes only notify materially changed pages.
-          if ".github/workflows/indexnow.yml" in changed:
-              full = True
 
           urls = sitemap_urls() if full else set()
           if not full:
