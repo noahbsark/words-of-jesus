@@ -1,0 +1,99 @@
+name: Notify IndexNow
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out site
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Build IndexNow payload
+        id: urls
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          INDEXNOW_KEY: 4e4a20a56e0b452db1a5e00ad1a4ff07
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess, xml.etree.ElementTree as ET
+
+          host = "everywordofjesus.com"
+          base = "https://everywordofjesus.com"
+          key = os.environ["INDEXNOW_KEY"]
+          before = os.environ.get("BEFORE_SHA", "")
+          after = os.environ.get("AFTER_SHA", "HEAD")
+          event = os.environ.get("EVENT_NAME", "")
+
+          def sitemap_urls():
+              root = ET.parse("sitemap.xml").getroot()
+              ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+              return {n.text.strip() for n in root.findall("s:url/s:loc", ns) if n.text}
+
+          full = event == "workflow_dispatch" or not before or before == "0" * 40
+          changed = []
+          if not full:
+              try:
+                  raw = subprocess.check_output(
+                      ["git", "diff", "--name-status", before, after], text=True
+                  )
+                  for line in raw.splitlines():
+                      parts = line.split("\t")
+                      if len(parts) >= 2:
+                          changed.append(parts[-1])
+              except Exception:
+                  full = True
+
+          # The first commit that installs this workflow should notify the whole
+          # freshly launched site. Future pushes only notify materially changed pages.
+          if ".github/workflows/indexnow.yml" in changed:
+              full = True
+
+          urls = sitemap_urls() if full else set()
+          if not full:
+              for path in changed:
+                  if path == "index.html":
+                      urls.add(base + "/")
+                  elif path.endswith("/index.html"):
+                      urls.add(base + "/" + path[:-10])
+                  elif path.endswith(".html"):
+                      urls.add(base + "/" + path)
+                  elif path.startswith("data-") or path in {"app.js", "styles.css"}:
+                      urls.add(base + "/")
+
+          urls = sorted(urls)
+          payload = {
+              "host": host,
+              "key": key,
+              "keyLocation": f"{base}/{key}.txt",
+              "urlList": urls,
+          }
+          with open("/tmp/indexnow.json", "w", encoding="utf-8") as f:
+              json.dump(payload, f)
+
+          print(f"Prepared {len(urls)} URL(s) for IndexNow")
+          for url in urls:
+              print(url)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+              f.write(f"count={len(urls)}\n")
+          PY
+
+      - name: Submit changed URLs to IndexNow
+        if: steps.urls.outputs.count != '0'
+        run: |
+          code=$(curl -sS -o /tmp/indexnow-response.txt -w '%{http_code}' \
+            -X POST 'https://api.indexnow.org/indexnow' \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            --data-binary @/tmp/indexnow.json)
+          echo "IndexNow returned HTTP $code"
+          cat /tmp/indexnow-response.txt || true
+          if [ "$code" != "200" ] && [ "$code" != "202" ]; then
+            exit 1
+          fi
