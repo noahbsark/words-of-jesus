@@ -1,0 +1,28 @@
+/* Editorial and AdSense-remediation content styles */
+.value-section{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:38px 0 42px;background:color-mix(in srgb,var(--card) 45%,var(--bg))}
+.value-inner{max-width:1180px}.value-section h2{font-family:Georgia,serif;font-size:clamp(30px,4vw,44px);line-height:1.08;margin:8px 0 14px;max-width:820px}.value-lede{font-size:18px;color:var(--muted);max-width:900px;margin:0 0 24px}
+.value-grid,.question-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:24px 0}
+.value-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.value-card h3{font-family:Georgia,serif;font-size:21px;line-height:1.2;margin:0 0 9px}.value-card p{margin:0;color:var(--muted);font-size:15px}.value-card a{color:var(--accent);font-weight:700}
+.start-panel,.method-strip{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:24px;align-items:start;margin:24px 0;padding:22px 24px;border:1px solid var(--line);border-radius:16px;background:var(--accent2)}
+.start-panel strong{font-family:Georgia,serif;font-size:22px}.start-panel p,.method-strip p{margin:7px 0 0;color:var(--muted)}
+.start-links{display:grid;gap:7px}.start-links a{color:var(--accent);font-weight:800;text-decoration:none}.start-links a:hover{text-decoration:underline}
+.trust-note{margin:18px 0 0;color:var(--muted);font-size:14px}
+.article-page{width:min(900px,calc(100% - 32px))}.article-page section{scroll-margin-top:80px}.article-page h3{font-family:Georgia,serif;font-size:21px;line-height:1.25;margin:24px 0 7px}.article-page a{color:var(--accent)}
+.article-meta{font-size:13px;color:var(--muted);margin:14px 0 30px}
+.toc{display:grid;gap:6px;margin:28px 0 34px;padding:20px 22px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.toc strong{margin-bottom:4px}.toc a{text-decoration:none;font-size:14px}.toc a:hover{text-decoration:underline}
+.era-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:22px 0}.era-card{padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.era-card h3{margin:0 0 6px;font-size:20px}.era-card p{margin:0;color:var(--muted);font-size:15px}
+.callout{margin:28px 0;padding:20px 22px;border-left:4px solid var(--accent);border-radius:0 14px 14px 0;background:var(--accent2)}.callout strong{font-family:Georgia,serif;font-size:21px}.callout p{margin:7px 0 0}
+.method-steps{display:grid;gap:12px;padding:0;list-style:none;counter-reset:steps}.method-steps li{counter-increment:steps;display:grid;grid-template-columns:160px 1fr;gap:16px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.method-steps li strong:before{content:counter(steps) ". ";color:var(--accent)}.method-steps li span{color:var(--muted)}
+.timeline-list{display:grid;gap:9px;margin:20px 0}.timeline-list>div{padding:14px 16px;border-left:3px solid var(--line);background:var(--card)}
+.path-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}.path-card{display:grid;gap:5px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--card);text-decoration:none!important}.path-card strong{font-family:Georgia,serif;font-size:20px;color:var(--text)}.path-card span{color:var(--muted);font-size:14px}.path-card:hover{border-color:var(--accent)}
+.article-list{padding-left:22px}.article-list li{margin:8px 0}.article-next{margin-top:38px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted)}
+.faq-list{display:grid;gap:14px}.faq-item{padding:22px 24px;border:1px solid var(--line);border-radius:16px;background:var(--card)}.faq-item h2{font-size:24px;margin:0 0 10px}.faq-item p{margin:8px 0;font-size:16px}
+.method-strip h2{margin:0 0 8px!important;font-size:25px!important}
+@media(max-width:820px){
+  .value-grid,.question-grid,.era-grid,.path-grid{grid-template-columns:1fr}
+  .start-panel,.method-strip{grid-template-columns:1fr;padding:18px}
+  .method-steps li{grid-template-columns:1fr;gap:6px}
+  .article-page{width:min(100% - 24px,720px)}
+  .faq-item{padding:18px}
+}
