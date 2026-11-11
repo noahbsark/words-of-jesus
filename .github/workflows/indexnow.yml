@@ -64,8 +64,8 @@ jobs:
                   elif path.endswith("/index.html"):
                       urls.add(base + "/" + path[:-10])
                   elif path.endswith(".html"):
-                      urls.add(base + "/" + path)
-                  elif path.startswith("data-") or path in {"app.js", "styles.css"}:
+                      urls.add(base + "/" + path.removesuffix(".html"))
+                  elif path.startswith("data-") or path in {"reader-app.js", "styles.css", "reader.css", "sayings.js", "source-data.json"}:
                       urls.add(base + "/")
 
           urls = sorted(urls)
