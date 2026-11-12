@@ -2,6 +2,10 @@
   'use strict';
   const $=s=>document.querySelector(s), content=$('#bibleText'), versions=['KJV','BSB','ASV','YLT'];
   const cache=new Map();let catalog,request=0;
+  const header=document.querySelector('.topbar');
+  function measureHeader(){document.documentElement.style.setProperty('--reader-header-height',Math.ceil(header.getBoundingClientRect().height)+'px');}
+  measureHeader();
+  if(window.ResizeObserver)new ResizeObserver(measureHeader).observe(header);
   function stored(){try{return JSON.parse(localStorage.getItem('bibleVersion'))||'KJV';}catch(_){return 'KJV';}}
   function remember(v){try{localStorage.setItem('bibleVersion',JSON.stringify(v));}catch(_){}}
   function backLink(params){
