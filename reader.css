@@ -110,3 +110,7 @@ dt{font-weight:700;margin-top:22px}dd{margin:8px 0 22px}
   .filter-fields label:last-child{grid-column:1/-1}
 }
 
+
+/* Fieldsets and long translation names must shrink within small phones. */
+#bibleControls{min-inline-size:0;min-width:0;max-width:100%}
+.bible-controls select{width:100%;min-width:0}
