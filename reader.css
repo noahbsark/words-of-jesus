@@ -88,6 +88,8 @@ dt{font-weight:700;margin-top:22px}dd{margin:8px 0 22px}
 
 /* Keep the return bar directly below headers of different phone heights. */
 .reader-return{top:var(--reader-header-height,107px)}
+#reader,#timelinePanel{scroll-margin-top:140px}
+@media(max-width:380px){.topbar .brand{font-size:14px}.topbar .wrap{column-gap:8px}.hero h1{font-size:32px}}
 
 /* Optional filters collapse on phones; the search and sayings stay close. */
 .reader-filters,.filter-fields{display:contents}
