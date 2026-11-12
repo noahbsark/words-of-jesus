@@ -69,6 +69,8 @@
   $('#timeline').onclick=e=>{const b=e.target.closest('[data-section]');if(!b)return;const si=+b.dataset.section;state.era=String(data.sections[si].era);state.q='';state.book='all';state.saved=false;$('#search').value='';$('#eraSelect').value=state.era;$('#bookSelect').value='all';syncURL();const x=flat.find(x=>x.si===si);render(x.id);};
   document.querySelectorAll('.mobile-nav button').forEach(b=>b.onclick=()=>{if(b.dataset.action==='top')$('#reader').scrollIntoView({block:'start'});if(b.dataset.action==='search'){$('#search').scrollIntoView({block:'center'});$('#search').focus({preventScroll:true});}if(b.dataset.action==='saved')$('#savedBtn').click();if(b.dataset.action==='timeline'){$('#timelinePanel').open=true;$('#timelinePanel').scrollIntoView({block:'start'});}});
   addEventListener('popstate',()=>{readURL();render(new URLSearchParams(location.search).get('saying')||location.hash.slice(1));});
-  if(matchMedia('(max-width:820px)').matches)$('#timelinePanel').open=false;
+  const smallScreen=matchMedia('(max-width:820px)');
+  function adaptFilters(){if(smallScreen.matches)$('#timelinePanel').open=false;$('#readerFilters').open=!smallScreen.matches;}
+  adaptFilters();smallScreen.addEventListener('change',adaptFilters);
   readURL();render(new URLSearchParams(location.search).get('saying')||location.hash.slice(1));
 })();
