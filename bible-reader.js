@@ -35,15 +35,15 @@
   async function render(scroll=false){
     const token=++request,s=current();backLink(s.params);$('#bibleBook').value=s.book.id;$('#bibleVersion').value=s.version;
     $('#bibleChapter').replaceChildren(...Array.from({length:s.book.chapters},(_,i)=>new Option('Chapter '+(i+1),i+1)));$('#bibleChapter').value=s.chapter;
-    document.title=s.book.name+' '+s.chapter+' — '+s.version+' | Every Word of Jesus';$('#chapterTitle').textContent=s.book.name+' '+s.chapter;
+    document.title=s.book.name+' '+s.chapter+' - '+s.version+' | Every Word of Jesus';$('#chapterTitle').textContent=s.book.name+' '+s.chapter;
     $('#translationName').textContent=catalog.versions[s.version];remember(s.version);
-    for(const [id,d]of [['previousChapter',-1],['nextChapter',1],['previousBottom',-1],['nextBottom',1]]){const n=neighbor(s,d),link=$('#'+id);link.hidden=!n;if(n){link.href=url(n.book,n.chapter,s.version);link.textContent=(d<0?'← ':'')+n.book.name+' '+n.chapter+(d>0?' →':'');}}
+    for(const [id,d]of [['previousChapter',-1],['nextChapter',1],['previousBottom',-1],['nextBottom',1]]){const n=neighbor(s,d),link=$('#'+id);link.hidden=!n;if(n){link.href=url(n.book,n.chapter,s.version);link.textContent=(d<0?' ':'')+n.book.name+' '+n.chapter+(d>0?' ':'');}}
     $('#externalBible').href='https://www.biblegateway.com/passage/?'+new URLSearchParams({search:s.book.name+' '+s.chapter,version:s.version});
-    content.setAttribute('aria-busy','true');content.textContent='Loading chapter…';
+    content.setAttribute('aria-busy','true');content.textContent='Loading chapter.';
     try{
       const data=await loadBook(s.version,s.book);if(token!==request)return;const chapter=data.chapters.find(c=>c.chapter===s.chapter);if(!chapter)throw Error('Missing chapter');
       const fragment=document.createDocumentFragment();for(const verse of chapter.verses){const row=document.createElement('p');row.id='v'+verse.verse;row.className='bible-verse';const num=document.createElement('a');num.className='verse-number';num.href='#v'+verse.verse;num.textContent=verse.verse;num.setAttribute('aria-label','Verse '+verse.verse);row.append(num,document.createTextNode(' '+verse.text));fragment.append(row);}
-      content.replaceChildren(fragment);highlight();const requested=Number(location.hash.replace('#v',''));const absent=requested&&!chapter.verses.some(v=>v.verse===requested);$('#bibleStatus').textContent=chapter.verses.length+' verses · '+s.version+' · full chapter, including narration'+(absent?' · Verse '+requested+' is not numbered in this edition; read the surrounding text.':'');
+      content.replaceChildren(fragment);highlight();const requested=Number(location.hash.replace('#v',''));const absent=requested&&!chapter.verses.some(v=>v.verse===requested);$('#bibleStatus').textContent=chapter.verses.length+' verses � '+s.version+' � full chapter, including narration'+(absent?' � Verse '+requested+' is not numbered in this edition; read the surrounding text.':'');
       if(scroll||location.hash)requestAnimationFrame(()=>{const target=document.getElementById(location.hash.slice(1))||$('#chapterTitle');target.scrollIntoView({block:'center'});});
     }catch(_){if(token===request){content.textContent='This chapter could not load. Check your connection or use a current browser. Your place is kept in the address bar.';const retry=document.createElement('button');retry.className='btn';retry.textContent='Try again';retry.onclick=()=>render();content.append(document.createElement('br'),retry);$('#bibleStatus').textContent='You can also read this chapter on Bible Gateway using the link below.';}}
     finally{if(token===request)content.setAttribute('aria-busy','false');}
@@ -54,3 +54,4 @@
   addEventListener('popstate',()=>render(true));addEventListener('hashchange',highlight);
   fetch('/bible-data/catalog.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(d=>{catalog=d;$('#bibleBook').replaceChildren(...d.books.map(b=>new Option(b.name,b.id)));$('#bibleVersion').replaceChildren(...Object.entries(d.versions).map(([v,n])=>new Option(n,v)));$('#bibleControls').disabled=false;render();}).catch(()=>{content.textContent='The Bible library could not load. Please try again later, or use the external chapter link below.';});
 })();
+
