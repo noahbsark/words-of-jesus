@@ -33,6 +33,12 @@ def reference(book, chapter, first=None, last=None):
 
 def refresh_static_cards():
     reviewed, corrections = registry()
+    source = (ROOT / 'reviewed-passages.js').read_text(encoding='utf-8')
+    raw_notes = re.search(r'REVIEWED_CONTEXT_NOTES = (\{.*?\});', source, re.S)
+    notes = {int(key): json.loads(value) for key, value in
+             re.findall(r'^  (\d+): (.+?)(?:,)?$', raw_notes[1], re.M)} if raw_notes else {}
+    if not notes.keys() <= reviewed.keys():
+        raise ValueError('Every context note must have a reviewed passage.')
     raw = (ROOT / 'sayings.js').read_text(encoding='utf-8')
     data = json.loads(raw.strip().removeprefix('window.READER_DATA=').removesuffix(';'))
     sections = []
@@ -56,8 +62,10 @@ def refresh_static_cards():
                 for i, (lead, book, chapter, first, last) in enumerate(links))
             title = f'Saying {number}' if number else 'Recorded saying'
             quote = html.escape(corrections.get(number, entry['text']))
+            note = notes.get(number)
+            note_html = f'<p class="reader-caveat">{html.escape(note)}</p>' if note else ''
             cards.append(f'<article class="saying" id="{ident}"><p class="num">{title} · KJV-based harmony excerpt</p>'
-                         f'<blockquote class="quote"><a href="{html.escape(paths[0])}">{quote}</a></blockquote>'
+                         f'{note_html}<blockquote class="quote"><a href="{html.escape(paths[0])}">{quote}</a></blockquote>'
                          f'<div class="context-links" aria-label="Bible context">{buttons}</div></article>')
         sections.append(f'<section class="section" id="section-{si}"><h2>{html.escape(section["title"])}</h2>'
                         f'<p class="section-source">{html.escape(section["source"])}</p>' + ''.join(cards) + '</section>')
