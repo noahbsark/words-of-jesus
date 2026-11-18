@@ -117,3 +117,7 @@ dt{font-weight:700;margin-top:22px}dd{margin:8px 0 22px}
 .context-links a{min-height:44px;display:inline-flex;align-items:center}
 .verse-card[id],.context-explainer[id]{scroll-margin-top:145px}
 .topic-context{margin:0 0 16px}
+
+.reader-routes{margin-top:12px}
+.reader-routes summary{cursor:pointer;width:fit-content;min-height:44px;align-content:center;font-weight:700}
+.reader-routes .topics{margin-top:6px}

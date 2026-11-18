@@ -10,11 +10,11 @@
   function remember(v){try{localStorage.setItem('bibleVersion',JSON.stringify(v));}catch(_){}}
   function backLink(params){
     const link=$('#backToSaying'),raw=params.get('return');let target='/';
-    try{const u=new URL(raw||'/',location.origin);if(u.origin===location.origin&&/^\/(?:$|gospels$|parallel-gospels$|compare$|find-a-passage$|topics\/[a-z-]+\/$)/.test(u.pathname))target=u.pathname+u.search+u.hash;}catch(_){}
+    try{const u=new URL(raw||'/',location.origin);if(u.origin===location.origin&&/^\/(?:$|gospels$|words-of-jesus-in-john$|parallel-gospels$|compare$|find-a-passage$|topics\/[a-z-]+\/$)/.test(u.pathname))target=u.pathname+u.search+u.hash;}catch(_){}
     if(target==='/'&&/^saying-\d+$|^passage-\d+-\d+$/.test(params.get('from')||''))target='/#'+params.get('from');
     link.href=target;
     const path=new URL(target,location.origin).pathname;
-    link.textContent=({'/gospels':'Back to the Gospel index','/parallel-gospels':'Back to the Gospel comparison','/compare':'Back to the comparison','/find-a-passage':'Back to passage lookup'})[path]||(
+    link.textContent=({'/gospels':'Back to the Gospel index','/words-of-jesus-in-john':'Back to the John guide','/parallel-gospels':'Back to the Gospel comparison','/compare':'Back to the comparison','/find-a-passage':'Back to passage lookup'})[path]||(
       path.startsWith('/topics/')?'Back to the topic guide':target==='/'?'Back to the sayings':'Back to your saying'
     );
   }
