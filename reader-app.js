@@ -66,8 +66,11 @@
     const key=esc(x.key);
     return `<details class="source-preview" data-preview-key="${key}"${openSources.has(x.key)?' open':''}><summary>View Bible text (${esc(state.version)})</summary><div class="source-preview-text" data-preview-text></div></details>`;
   }
-  function verseText(row){
-    return `<p class="preview-verse"><span class="preview-verse-number">${row.verse}</span> ${esc(row.text)}</p>`;
+  function verseText(row,context){
+    const speaker=window.BibleSpeakerNotes?.get(slug(context.book),context.chapter,row.verse,context.verse);
+    const label=speaker?` <span class="speaker-label">${esc(speaker.label)}</span>`:'';
+    const note=speaker?.detail?` <span class="speaker-detail">${esc(speaker.detail)}</span>`:'';
+    return `<p class="preview-verse"><span class="preview-verse-number">${row.verse}</span>${label} ${esc(row.text)}${note}</p>`;
   }
   function previewBlock(x,context,version,result){
     const link=`<a class="context-link" href="${esc(contextURL(x,context,version))}">Open full chapter</a>`;
@@ -81,10 +84,10 @@
     const selection=verses.filter(row=>row.verse>=start&&row.verse<=end);
     const missing=selection.length!==end-start+1
       ? '<p class="resource-note">This edition skips one or more verse numbers in the selected range.</p>':'';
-    const first=selection.slice(0,6).map(verseText).join('');
+    const first=selection.slice(0,6).map(row=>verseText(row,context)).join('');
     const remaining=selection.slice(6);
     const rest=remaining.length
-      ? `<details class="source-more"><summary>Show ${remaining.length} more verses</summary>${remaining.map(verseText).join('')}</details>`:'';
+      ? `<details class="source-more"><summary>Show ${remaining.length} more verses</summary>${remaining.map(row=>verseText(row,context)).join('')}</details>`:'';
     return `<section class="source-passage">${title}${missing}${first}${rest}${link}</section>`;
   }
   async function loadSourcePreview(preview,x){

@@ -66,6 +66,16 @@ def main():
     assert corrections.keys()<=reviewed.keys()
     chapters={(b['name'].lower().replace(' ','-'),c['chapter']):{v['verse'] for v in c['verses']}
               for b in book_data.values() for c in b['chapters']}
+    speaker_source=(ROOT/'speaker-notes.js').read_text(encoding='utf8')
+    speakers=json.loads(re.search(r'const notes = (\{.*?\});', speaker_source, re.S)[1])
+    for key, notes in speakers.items():
+        slug, chapter=key.split(':')
+        available=chapters[slug,int(chapter)]
+        previous=0
+        for start,end,label,*detail in notes:
+            assert previous<start<=end and set(range(start,end+1))<=available, (key,start,end)
+            assert label.strip() and len(detail)<=1 and all(d.strip() for d in detail), (key,start)
+            previous=end
     for rows in reviewed.values():
         for book,ch,start,end in rows:
             available=chapters[book.lower().replace(' ','-'),ch]

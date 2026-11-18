@@ -10,11 +10,11 @@
   function remember(v){try{localStorage.setItem('bibleVersion',JSON.stringify(v));}catch(_){}}
   function backLink(params){
     const link=$('#backToSaying'),raw=params.get('return');let target='/';
-    try{const u=new URL(raw||'/',location.origin);if(u.origin===location.origin&&/^\/(?:$|gospels$|words-of-jesus-in-john$|words-of-jesus-in-mark$|words-of-jesus-in-luke$|words-of-jesus-in-matthew$|parallel-gospels$|search-bible-phrases$|did-jesus-say-that$|compare$|find-a-passage$|topics\/[a-z-]+\/$)/.test(u.pathname))target=u.pathname+u.search+u.hash;}catch(_){}
+    try{const u=new URL(raw||'/',location.origin);if(u.origin===location.origin&&/^\/(?:$|gospels$|words-of-jesus-in-john$|words-of-jesus-in-mark$|words-of-jesus-in-luke$|words-of-jesus-in-matthew$|parallel-gospels$|search-bible-phrases$|did-jesus-say-that$|who-is-speaking$|compare$|find-a-passage$|topics\/[a-z-]+\/$)/.test(u.pathname))target=u.pathname+u.search+u.hash;}catch(_){}
     if(target==='/'&&/^saying-\d+$|^passage-\d+-\d+$/.test(params.get('from')||''))target='/#'+params.get('from');
     link.href=target;
     const path=new URL(target,location.origin).pathname;
-    link.textContent=({'/gospels':'Back to the Gospel index','/words-of-jesus-in-john':'Back to the John guide','/words-of-jesus-in-mark':'Back to the Mark guide','/words-of-jesus-in-luke':'Back to the Luke guide','/words-of-jesus-in-matthew':'Back to the Matthew guide','/parallel-gospels':'Back to the Gospel comparison','/search-bible-phrases':'Back to phrase search','/did-jesus-say-that':'Back to the sayings guide','/compare':'Back to the comparison','/find-a-passage':'Back to passage lookup'})[path]||(
+    link.textContent=({'/gospels':'Back to the Gospel index','/words-of-jesus-in-john':'Back to the John guide','/words-of-jesus-in-mark':'Back to the Mark guide','/words-of-jesus-in-luke':'Back to the Luke guide','/words-of-jesus-in-matthew':'Back to the Matthew guide','/parallel-gospels':'Back to the Gospel comparison','/search-bible-phrases':'Back to phrase search','/did-jesus-say-that':'Back to the sayings guide','/who-is-speaking':'Back to the speaker guide','/compare':'Back to the comparison','/find-a-passage':'Back to passage lookup'})[path]||(
       path.startsWith('/topics/')?'Back to the topic guide':target==='/'?'Back to the sayings':'Back to your saying'
     );
   }
@@ -56,9 +56,29 @@
     content.setAttribute('aria-busy','true');content.textContent='Loading chapter…';
     try{
       const data=await window.BibleLibrary.loadBook(s.version,s.book.id);if(token!==request)return;const chapter=data.chapters.find(c=>c.chapter===s.chapter);if(!chapter)throw Error('Missing chapter');
-      const fragment=document.createDocumentFragment();for(const verse of chapter.verses){const row=document.createElement('p');row.id='v'+verse.verse;row.className='bible-verse';const num=document.createElement('a');num.className='verse-number';num.href='#v'+verse.verse;num.textContent=verse.verse;num.setAttribute('aria-label','Verse '+verse.verse);row.append(num,document.createTextNode(' '+verse.text));fragment.append(row);}
-      content.replaceChildren(fragment);highlight();
       const {start,end}=selection();
+      const fragment=document.createDocumentFragment();
+      for(const verse of chapter.verses){
+        const row=document.createElement('p');
+        row.id='v'+verse.verse;
+        row.className='bible-verse';
+        const num=document.createElement('a');
+        num.className='verse-number';
+        num.href='#v'+verse.verse;
+        num.textContent=verse.verse;
+        num.setAttribute('aria-label','Verse '+verse.verse);
+        row.append(num);
+        const speaker=window.BibleSpeakerNotes?.get(s.book.id,s.chapter,verse.verse,start);
+        if(speaker){
+          const label=document.createElement('span');label.className='speaker-label';label.textContent=speaker.label;row.append(label);
+        }
+        row.append(document.createTextNode(' '+verse.text));
+        if(speaker?.detail){
+          const note=document.createElement('span');note.className='speaker-detail';note.textContent=speaker.detail;row.append(note);
+        }
+        fragment.append(row);
+      }
+      content.replaceChildren(fragment);highlight();
       const available=new Set(chapter.verses.map(v=>v.verse));
       const missing=start&&(!available.has(start)||!available.has(end)||chapter.verses.filter(v=>v.verse>=start&&v.verse<=end).length<end-start+1);
       const selected=start?' · Selected '+(start===end?'verse '+start:'verses '+start+'–'+end):'';
