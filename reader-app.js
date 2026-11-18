@@ -68,7 +68,7 @@
     if(button.classList.contains('save')){saved.has(x.key)?saved.delete(x.key):saved.add(x.key);storage.set('savedJesus',[...saved]);button.textContent=saved.has(x.key)?'★':'☆';button.setAttribute('aria-pressed',String(saved.has(x.key)));button.setAttribute('aria-label',(saved.has(x.key)?'Unsave':'Save')+' saying '+x.key);card.classList.toggle('saved',saved.has(x.key));announce(saved.has(x.key)?'Saying saved on this device.':'Saying removed from saved.');if(state.saved)render();}
     if(button.classList.contains('expand')){const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));card.querySelector('.quote').classList.toggle('quote-short',!open);button.textContent=open?'Show less':'Read full excerpt';}
     try{
-      if(button.classList.contains('copy')){await navigator.clipboard.writeText(x.text+' — KJV-based harmony excerpt; context: '+x.contexts.map(c=>c.book+' '+c.chapter).join('; '));announce('Excerpt copied.');}
+      if(button.classList.contains('copy')){await navigator.clipboard.writeText(x.text+' — KJV-based harmony excerpt; context: '+x.contexts.map(contextLabel).join('; '));announce('Excerpt copied.');}
       if(button.classList.contains('share')){const url=location.origin+'/?saying='+encodeURIComponent(x.key);if(navigator.share)await navigator.share({title:'Every Word of Jesus',url});else{await navigator.clipboard.writeText(url);announce('Link copied.');}}
     }catch(error){if(error.name!=='AbortError')announce('Your browser could not copy or share. You can copy the passage text or page address manually.');}
   });
