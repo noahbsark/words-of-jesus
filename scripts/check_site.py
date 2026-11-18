@@ -3,6 +3,7 @@ from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import urlsplit,unquote,parse_qs
 import json,re,gzip,base64,xml.etree.ElementTree as ET
+from build_phrase_search import OUT as PHRASE_INDEX_DIR, indexes as phrase_indexes
 from render_context_cards import registry
 ROOT=Path(__file__).resolve().parents[1]
 class Page(HTMLParser):
@@ -79,6 +80,11 @@ def main():
                 first=int(u.fragment[1:]);last=int(q.get('through',[first])[0])
                 assert first<=last and set(range(first,last+1))<=available,href
     print(f'Checked range endpoints for {len(reviewed)} reviewed sayings and every static Bible link.')
+    for version, expected in phrase_indexes():
+        packed = json.loads((PHRASE_INDEX_DIR / f'{version}.json').read_text(encoding='utf8'))
+        actual = json.loads(gzip.decompress(base64.b64decode(packed['gzip'])))
+        assert actual == expected, (version, 'Run scripts/build_phrase_search.py to refresh the phrase index.')
+
     assert data['sections'][50]['era']==3 and data['sections'][73]['era']==5
     urls={x.text for x in ET.parse(ROOT/'sitemap.xml').findall('.//{*}loc')}
     expected={v.canonical[0] for p,v in pages.items() if p.name not in ('404.html','bible.html')}

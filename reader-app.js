@@ -70,7 +70,7 @@
       out+=`<article class="saying${saved.has(x.key)?' saved':''}" id="${esc(x.id)}" data-key="${esc(x.key)}"><div class="saying-head"><span class="num">${x.number?'Saying '+x.number:'Recorded passage'}</span><div class="actions"><button class="iconbtn save" aria-label="${saved.has(x.key)?'Unsave':'Save'} saying ${esc(x.key)}" aria-pressed="${saved.has(x.key)}">${saved.has(x.key)?'★':'☆'}</button><button class="iconbtn copy">Copy</button><button class="iconbtn share">Share</button></div></div><p class="excerpt-label">${x.number?'KJV-based harmony excerpt':'KJV passage excerpt'}</p>${notes[x.key]?`<p class="reader-caveat">${esc(notes[x.key])}</p>`:''}${quoteHTML(x)}<div class="context-links" aria-label="Bible context">${contextLinks(x)}</div></article>`;
     }
     if(current!==-1)out+='</section>';
-    $('#reader').innerHTML=out.replaceAll('</section-start>','')||'<div class="empty">No sayings match. Try a shorter phrase, clear the filters, or <a href="/find-a-passage">look up a Bible reference</a>.</div>';
+    $('#reader').innerHTML=out.replaceAll('</section-start>','')||'<div class="empty">No sayings match. Try a shorter phrase, clear the filters, or <a href="/search-bible-phrases">search across translations</a>.</div>';
     $('#loadMore').hidden=results.length<=state.limit;$('#loadMore').textContent='Show next '+Math.min(24,results.length-state.limit)+' sayings';
     $('#readerPosition').textContent=`Showing ${Math.min(results.length,state.limit)} of ${results.length} matches`;
     $('#clearFilters').hidden=!state.q&&state.era==='all'&&state.book==='all'&&!state.saved;
