@@ -3,6 +3,7 @@ from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import urlsplit,unquote,parse_qs
 import json,re,gzip,base64,xml.etree.ElementTree as ET
+from render_context_cards import registry
 ROOT=Path(__file__).resolve().parents[1]
 class Page(HTMLParser):
     def __init__(self):super().__init__();self.links=[];self.assets=[];self.ids=[];self.canonical=[]
@@ -58,6 +59,25 @@ def main():
         assert x['contexts']
         for c in x['contexts']:
             b=book_data[c['book']];ch=b['chapters'][c['chapter']-1];assert c['verse'] in [v['verse'] for v in ch['verses']]
+    reviewed, corrections=registry()
+    entries={x.get('number'):x for x in flat if x.get('number')}
+    assert reviewed.keys()<=entries.keys() and corrections.keys()<=reviewed.keys()
+    chapters={(b['name'].lower().replace(' ','-'),c['chapter']):{v['verse'] for v in c['verses']}
+              for b in book_data.values() for c in b['chapters']}
+    for rows in reviewed.values():
+        for book,ch,start,end in rows:
+            available=chapters[book.lower().replace(' ','-'),ch]
+            assert set(range(start,end+1))<=available,(book,ch,start,end)
+    for page in pages.values():
+        for href in page.links:
+            u=urlsplit(href)
+            if u.path!='/bible' or u.netloc or not u.query:continue
+            q=parse_qs(u.query)
+            available=chapters[q['book'][0],int(q['chapter'][0])]
+            if re.fullmatch(r'v\d+',u.fragment):
+                first=int(u.fragment[1:]);last=int(q.get('through',[first])[0])
+                assert first<=last and set(range(first,last+1))<=available,href
+    print(f'Checked range endpoints for {len(reviewed)} reviewed sayings and every static Bible link.')
     assert data['sections'][50]['era']==3 and data['sections'][73]['era']==5
     urls={x.text for x in ET.parse(ROOT/'sitemap.xml').findall('.//{*}loc')}
     expected={v.canonical[0] for p,v in pages.items() if p.name not in ('404.html','bible.html')}

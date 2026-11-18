@@ -4,7 +4,12 @@
   if(!data) return; // The complete static reader remains available.
   const $=s=>document.querySelector(s), esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const storage={get(k,f){try{return JSON.parse(localStorage.getItem(k))??f;}catch(_){return f;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(_){}}};
-  const flat=data.sections.flatMap((s,si)=>s.items.map(x=>({...x,si,section:s,era:s.era,key:String(x.number||x.id)})));
+  const reviewed=window.REVIEWED_PASSAGES||{};
+  const corrected=window.REVIEWED_QUOTE_CORRECTIONS||{};
+  const flat=data.sections.flatMap((s,si)=>s.items.map(x=>{
+    const passages=reviewed[x.number]?.map(([book,chapter,verse,end])=>({book,chapter,verse,end,matched:true,reviewed:true}));
+    return {...x,text:corrected[x.number]||x.text,contexts:passages||x.contexts,si,section:s,era:s.era,key:String(x.number||x.id)};
+  }));
   const savedValue=storage.get('savedJesus',[]), saved=new Set(Array.isArray(savedValue)?savedValue.map(String):[]);
   const state={q:'',era:'all',book:'all',saved:false,limit:24,version:storage.get('bibleVersion','KJV')};
   if(!data.versions[state.version])state.version='KJV';
@@ -27,8 +32,19 @@
     history.replaceState(null,'','/'+(p.size?'?'+p:'')+location.hash);
   }
   function matches(x){return (!state.saved||saved.has(x.key))&&(state.era==='all'||x.era===+state.era)&&(state.book==='all'||x.contexts.some(c=>c.book===state.book))&&(!state.q.trim()||(x.text+' '+x.section.title+' '+x.section.source+' '+x.contexts.map(c=>c.book+' '+c.chapter).join(' ')).toLowerCase().includes(state.q.trim().toLowerCase()));}
-  function contextURL(x,c){const p=new URLSearchParams({book:slug(c.book),chapter:String(c.chapter),version:state.version,from:x.id,return:'/'+location.search+'#'+x.id});return '/bible?'+p+'#v'+c.verse;}
-  function quoteHTML(x){const c=x.contexts[0],long=x.text.length>650;return `<div class="quote${long?' quote-short':''}" id="quote-${esc(x.id)}"><a href="${esc(contextURL(x,c))}" aria-label="Read Bible context for this saying">${esc(x.text)}</a></div>${long?`<button class="text-button expand" aria-expanded="false" aria-controls="quote-${esc(x.id)}">Read full excerpt</button>`:''}`;}
+  function contextURL(x,c){
+    const p=new URLSearchParams({book:slug(c.book),chapter:String(c.chapter),version:state.version,from:x.id,return:'/'+location.search+'#'+x.id});
+    if(c.end>c.verse)p.set('through',c.end);
+    return '/bible?'+p+(c.matched?'#v'+c.verse:'');
+  }
+  function contextLabel(c){return c.book+' '+c.chapter+(c.matched?':'+c.verse+(c.end>c.verse?'–'+c.end:''):'');}
+  function contextLinks(x){
+    return x.contexts.map((c,i)=>{
+      const lead=c.reviewed?(i?'Also read':'Read in context'):c.matched?'Possible verse match':'Related chapter';
+      return `<a class="context-link${i===0?' primary-context':''}" href="${esc(contextURL(x,c))}">${lead}: ${esc(contextLabel(c))} →</a>`;
+    }).join('');
+  }
+  function quoteHTML(x){const c=x.contexts[0],long=x.text.length>650;return `<div class="quote${long?' quote-short':''}" id="quote-${esc(x.id)}"><a href="${esc(contextURL(x,c))}">${esc(x.text)}</a></div>${long?`<button class="text-button expand" aria-expanded="false" aria-controls="quote-${esc(x.id)}">Read full excerpt</button>`:''}`;}
   function render(target){
     const results=flat.filter(matches);if(target){const i=results.findIndex(x=>x.id===target||x.key===target);if(i>=0)state.limit=Math.max(24,Math.ceil((i+1)/24)*24);}
     $('#resultCount').textContent=results.length;$('#total').textContent=flat.length;$('#sectionsCount').textContent=data.sections.length;
@@ -36,7 +52,7 @@
     let current=-1,out='';
     for(const x of results.slice(0,state.limit)){
       if(current!==x.si){if(current!==-1)out+='</section>';current=x.si;out+=`<section class="section" id="section-${x.si}"><p class="eyebrow">${esc(data.eras[x.era])}</p><h2>${esc(x.section.title)}</h2><p class="section-source">${esc(x.section.source)}</p></section-start>`;}
-      out+=`<article class="saying${saved.has(x.key)?' saved':''}" id="${esc(x.id)}" data-key="${esc(x.key)}"><div class="saying-head"><span class="num">${x.number?'Saying '+x.number:'Recorded saying'}</span><div class="actions"><button class="iconbtn save" aria-label="${saved.has(x.key)?'Unsave':'Save'} saying ${esc(x.key)}" aria-pressed="${saved.has(x.key)}">${saved.has(x.key)?'★':'☆'}</button><button class="iconbtn copy">Copy</button><button class="iconbtn share">Share</button></div></div><p class="excerpt-label">KJV-based harmony excerpt</p>${quoteHTML(x)}<div class="context-links" aria-label="Bible context">${x.contexts.map(c=>`<a class="context-link" href="${esc(contextURL(x,c))}">${c.matched?'Read context':'Event context'}: ${esc(c.book)} ${c.chapter}${c.matched?':'+c.verse:''} →</a>`).join('')}</div></article>`;
+      out+=`<article class="saying${saved.has(x.key)?' saved':''}" id="${esc(x.id)}" data-key="${esc(x.key)}"><div class="saying-head"><span class="num">${x.number?'Saying '+x.number:'Recorded saying'}</span><div class="actions"><button class="iconbtn save" aria-label="${saved.has(x.key)?'Unsave':'Save'} saying ${esc(x.key)}" aria-pressed="${saved.has(x.key)}">${saved.has(x.key)?'★':'☆'}</button><button class="iconbtn copy">Copy</button><button class="iconbtn share">Share</button></div></div><p class="excerpt-label">KJV-based harmony excerpt</p>${quoteHTML(x)}<div class="context-links" aria-label="Bible context">${contextLinks(x)}</div></article>`;
     }
     if(current!==-1)out+='</section>';
     $('#reader').innerHTML=out.replaceAll('</section-start>','')||'<div class="empty">No sayings match. Try a shorter word or clear the filters.</div>';

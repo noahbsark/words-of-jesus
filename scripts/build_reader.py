@@ -4,6 +4,7 @@ Run from the repository root. Bible inputs are the unchanged Scrollmapper JSON
 exports named KJV.json, ASV.json, BSB.json and YLT.json in --inputs.
 """
 from pathlib import Path
+from render_context_cards import refresh_static_cards
 import argparse,base64,gzip,hashlib,html,json,re
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -90,16 +91,6 @@ def main():
     data['eras']=ERAS;data['versions']=VERSIONS
     (ROOT/'sayings.js').write_text('window.READER_DATA='+json.dumps(data,ensure_ascii=False,separators=(',',':'))+';\n',encoding='utf-8')
     dump(ROOT/'reference-corrections.json',corrections)
-    # A complete static fallback, also directly crawlable without JavaScript.
-    sections=[]
-    for si,s in enumerate(data['sections']):
-        cards=[]
-        for x in s['items']:
-            c=x['contexts'][0];ref=f"{c['book']} {c['chapter']}";url=f"/bible?book={slug(c['book'])}&chapter={c['chapter']}&version=KJV&from={x['id']}#v{c['verse']}"
-            cards.append(f'<article class="saying" id="{x["id"]}"><p class="num">{("Saying "+str(x["number"])) if x.get("number") else "Recorded saying"} · KJV-based harmony excerpt</p><blockquote class="quote"><a href="{html.escape(url)}">{html.escape(x["text"])}</a></blockquote><a class="context-link" href="{html.escape(url)}">Read Bible context: {html.escape(ref)} →</a></article>')
-        sections.append(f'<section class="section" id="section-{si}"><h2>{html.escape(s["title"])}</h2><p class="section-source">{html.escape(s["source"])}</p>'+''.join(cards)+'</section>')
-    template=(ROOT/'index.html').read_text(encoding='utf-8')
-    template=re.sub(r'<!-- SAYINGS START -->.*?<!-- SAYINGS END -->','<!-- SAYINGS START -->'+''.join(sections)+'<!-- SAYINGS END -->',template,flags=re.S)
-    (ROOT/'index.html').write_text(template,encoding='utf-8')
+    refresh_static_cards()
     print(f'Built {total} sayings in {len(data["sections"])} sections; 264 local Bible books; {len(corrections)} corrected source headings.')
 if __name__=='__main__':main()
