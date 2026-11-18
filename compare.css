@@ -1,0 +1,27 @@
+.compare-page{width:min(1020px,calc(100% - 30px))}
+.compare-form fieldset{min-width:0;border:1px solid var(--line);border-radius:14px;padding:16px;margin:0}
+.compare-form legend{font-weight:700;padding:0 8px}
+.compare-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.compare-controls .edition{grid-column:span 2}
+.compare-controls label{font-size:14px;font-weight:700;display:grid;min-width:0;gap:4px}
+.compare-controls input,.compare-controls select{width:100%;min-width:0;min-height:44px;font-size:16px;padding:8px;background:var(--card)}
+.compare-form button{margin-top:14px;min-height:44px}
+.compare-status:empty{display:none}
+.compare-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.compare-row>*{min-width:0;margin:0;padding:14px 18px}
+.compare-row>:first-child{border-right:1px solid var(--line)}
+.compare-row:last-child{border-bottom:0}
+.compare-row p{font-family:Georgia,serif;font-size:19px;line-height:1.55;overflow-wrap:anywhere}
+.compare-row h2{font-size:18px;background:var(--accent2)}
+.compare-table{background:var(--card);overflow:hidden;border:1px solid var(--line);border-radius:14px}
+.compare-number{font-family:system-ui,sans-serif;font-size:12px;margin-right:8px;color:var(--accent)}
+#compareTitle{scroll-margin-top:145px}
+.compare-actions{display:flex;gap:4px 18px;flex-wrap:wrap;margin:12px 0}
+.compare-actions a{display:inline-flex;align-items:center;min-height:44px}
+@media(max-width:560px){
+  .compare-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .compare-controls .edition{grid-column:auto}
+  .compare-row>*{padding:10px}
+  .compare-row p{font-size:16px}
+  .compare-row h2{font-size:15px}
+}

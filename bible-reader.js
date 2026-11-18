@@ -10,9 +10,13 @@
   function remember(v){try{localStorage.setItem('bibleVersion',JSON.stringify(v));}catch(_){}}
   function backLink(params){
     const link=$('#backToSaying'),raw=params.get('return');let target='/';
-    try{const u=new URL(raw||'/',location.origin);if(u.origin===location.origin&&/^\/(?:$|gospels$|topics\/[a-z-]+\/$)/.test(u.pathname))target=u.pathname+u.search+u.hash;}catch(_){}
+    try{const u=new URL(raw||'/',location.origin);if(u.origin===location.origin&&/^\/(?:$|gospels$|compare$|topics\/[a-z-]+\/$)/.test(u.pathname))target=u.pathname+u.search+u.hash;}catch(_){}
     if(target==='/'&&/^saying-\d+$|^passage-\d+-\d+$/.test(params.get('from')||''))target='/#'+params.get('from');
-    link.href=target;link.textContent=target.startsWith('/gospels')?'Back to the Gospel index':target.startsWith('/topics/')?'Back to the topic guide':target==='/'?'Back to the sayings':'Back to your saying';
+    link.href=target;
+    const path=new URL(target,location.origin).pathname;
+    link.textContent=({'/gospels':'Back to the Gospel index','/compare':'Back to the comparison'})[path]||(
+      path.startsWith('/topics/')?'Back to the topic guide':target==='/'?'Back to the sayings':'Back to your saying'
+    );
   }
   function current(){
     const p=new URLSearchParams(location.search),v=p.get('version')||stored();let book=catalog.books.find(b=>b.id===p.get('book'))||catalog.books.find(b=>b.id==='john');
@@ -55,6 +59,10 @@
     $('#translationName').textContent=catalog.versions[s.version];remember(s.version);
     for(const [id,d]of [['previousChapter',-1],['nextChapter',1],['previousBottom',-1],['nextBottom',1]]){const n=neighbor(s,d),link=$('#'+id);link.hidden=!n;if(n){link.href=url(n.book,n.chapter,s.version);link.textContent=(d<0?'← ':'')+n.book.name+' '+n.chapter+(d>0?' →':'');}}
     $('#externalBible').href='https://www.biblegateway.com/passage/?'+new URLSearchParams({search:s.book.name+' '+s.chapter,version:s.version});
+    const {start,end}=selection();
+    const compareParams=new URLSearchParams({book:s.book.id,chapter:s.chapter,left:s.version,right:s.version==='BSB'?'KJV':'BSB'});
+    if(start){compareParams.set('from',start);compareParams.set('to',end);}
+    $('#chapterCompare').href='/compare?'+compareParams;
     content.setAttribute('aria-busy','true');content.textContent='Loading chapter…';
     try{
       const data=await loadBook(s.version,s.book);if(token!==request)return;const chapter=data.chapters.find(c=>c.chapter===s.chapter);if(!chapter)throw Error('Missing chapter');
