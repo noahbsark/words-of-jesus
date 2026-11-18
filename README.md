@@ -15,7 +15,8 @@ site address or Search Console Change of Address is needed when the domain stays
 
 ## Reader
 
-486 KJV-based historical harmony excerpts are pre-rendered in index.html.
+The reader has 486 pre-rendered entries in index.html: 447 numbered KJV-based
+harmony excerpts and 39 supplemental New Testament passages.
 JavaScript adds filters, saved sayings, incremental display and context links.
 The Bible reader offers KJV, BSB, ASV and YLT in all 66 books. It downloads only
 the selected local compressed book, rather than calling an external verse API.
