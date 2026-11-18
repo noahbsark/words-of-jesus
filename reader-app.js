@@ -25,6 +25,8 @@
   const books=[...new Set(flat.flatMap(x=>x.contexts.map(c=>c.book)))].sort();
   const slug=s=>s.toLowerCase().replaceAll(' ','-');
   const notice=$('#readerNotice');
+  const reader=$('#reader');
+  const openSources=new Set();
   const announce=text=>{notice.textContent=text;};
   data.eras.forEach((n,i)=>$('#eraSelect').add(new Option(n,i)));
   books.forEach(n=>$('#bookSelect').add(new Option(n,n)));
@@ -46,8 +48,8 @@
       &&(state.book==='all'||x.contexts.some(c=>c.book===state.book))
       &&x.searchText.includes(query);
   }
-  function contextURL(x,c){
-    const p=new URLSearchParams({book:slug(c.book),chapter:String(c.chapter),version:state.version,from:x.id,return:'/'+location.search+'#'+x.id});
+  function contextURL(x,c,version=state.version){
+    const p=new URLSearchParams({book:slug(c.book),chapter:String(c.chapter),version,from:x.id,return:'/'+location.search+'#'+x.id});
     if(c.end>c.verse)p.set('through',c.end);
     return '/bible?'+p+(c.matched?'#v'+c.verse:'');
   }
@@ -59,6 +61,58 @@
     }).join('');
   }
   function quoteHTML(x){const c=x.contexts[0],long=x.text.length>650;return `<div class="quote${long?' quote-short':''}" id="quote-${esc(x.id)}"><a href="${esc(contextURL(x,c))}">${esc(x.text)}</a></div>${long?`<button class="text-button expand" aria-expanded="false" aria-controls="quote-${esc(x.id)}">Read full excerpt</button>`:''}`;}
+  function sourcePreviewHTML(x){
+    if (!window.BibleLibrary || !x.contexts.some(c=>c.reviewed)) return '';
+    const key=esc(x.key);
+    return `<details class="source-preview" data-preview-key="${key}"${openSources.has(x.key)?' open':''}><summary>View Bible text (${esc(state.version)})</summary><div class="source-preview-text" data-preview-text></div></details>`;
+  }
+  function verseText(row){
+    return `<p class="preview-verse"><span class="preview-verse-number">${row.verse}</span> ${esc(row.text)}</p>`;
+  }
+  function previewBlock(x,context,version,result){
+    const link=`<a class="context-link" href="${esc(contextURL(x,context,version))}">Open full chapter</a>`;
+    const start=context.verse;
+    const end=context.end||start;
+    const title=`<h4>${esc(contextLabel(context))} · ${version}</h4>`;
+    if (result.status==='rejected') {
+      return `<section class="source-passage">${title}<p>This source could not load.</p>${link}</section>`;
+    }
+    const verses=result.value.chapters.find(ch=>ch.chapter===context.chapter)?.verses||[];
+    const selection=verses.filter(row=>row.verse>=start&&row.verse<=end);
+    const missing=selection.length!==end-start+1
+      ? '<p class="resource-note">This edition skips one or more verse numbers in the selected range.</p>':'';
+    const first=selection.slice(0,6).map(verseText).join('');
+    const remaining=selection.slice(6);
+    const rest=remaining.length
+      ? `<details class="source-more"><summary>Show ${remaining.length} more verses</summary>${remaining.map(verseText).join('')}</details>`:'';
+    return `<section class="source-passage">${title}${missing}${first}${rest}${link}</section>`;
+  }
+  async function loadSourcePreview(preview,x){
+    if (preview.dataset.previewState==='loading'||preview.dataset.previewState==='ready') return;
+    const pane=preview.querySelector('[data-preview-text]');
+    const version=state.version;
+    const contexts=x.contexts.filter(c=>c.reviewed);
+    preview.dataset.previewState='loading';
+    pane.setAttribute('aria-busy','true');
+    pane.innerHTML='<p role="status">Loading the Bible text…</p>';
+    const sources=await Promise.allSettled(contexts.map(c=>window.BibleLibrary.loadBook(version,slug(c.book))));
+    if (!preview.isConnected) return;
+
+    const failed=sources.some(source=>source.status==='rejected');
+    preview.dataset.previewState=failed?'failed':'ready';
+    pane.innerHTML='<p class="resource-note">The Bible verses below can include narration or other speakers.</p>'
+      + contexts.map((context,index)=>previewBlock(x,context,version,sources[index])).join('')
+      + (failed?'<button class="text-button source-retry">Retry Bible text</button>':'');
+    pane.setAttribute('aria-busy','false');
+  }
+  reader.addEventListener('toggle',event=>{
+    const preview=event.target;
+    if (!preview.matches('.source-preview')) return;
+    const x=flat.find(entry=>entry.key===preview.dataset.previewKey);
+    if (!x) return;
+    if (preview.open){openSources.add(x.key);loadSourcePreview(preview,x);}
+    else openSources.delete(x.key);
+  },true);
   function render(target){
     const query=normalizeSearch(state.q);
     const results=flat.filter(x=>matches(x,query));if(target){const i=results.findIndex(x=>x.id===target||x.key===target);if(i>=0)state.limit=Math.max(24,Math.ceil((i+1)/24)*24);}
@@ -67,19 +121,28 @@
     let current=-1,out='';
     for(const x of results.slice(0,state.limit)){
       if(current!==x.si){if(current!==-1)out+='</section>';current=x.si;out+=`<section class="section" id="section-${x.si}"><p class="eyebrow">${esc(data.eras[x.era])}</p><h2>${esc(x.section.title)}</h2><p class="section-source">${esc(x.section.source)}</p></section-start>`;}
-      out+=`<article class="saying${saved.has(x.key)?' saved':''}" id="${esc(x.id)}" data-key="${esc(x.key)}"><div class="saying-head"><span class="num">${x.number?'Saying '+x.number:'Recorded passage'}</span><div class="actions"><button class="iconbtn save" aria-label="${saved.has(x.key)?'Unsave':'Save'} saying ${esc(x.key)}" aria-pressed="${saved.has(x.key)}">${saved.has(x.key)?'★':'☆'}</button><button class="iconbtn copy">Copy</button><button class="iconbtn share">Share</button></div></div><p class="excerpt-label">${x.number?'KJV-based harmony excerpt':'KJV passage excerpt'}</p>${notes[x.key]?`<p class="reader-caveat">${esc(notes[x.key])}</p>`:''}${quoteHTML(x)}<div class="context-links" aria-label="Bible context">${contextLinks(x)}</div></article>`;
+      out+=`<article class="saying${saved.has(x.key)?' saved':''}" id="${esc(x.id)}" data-key="${esc(x.key)}"><div class="saying-head"><span class="num">${x.number?'Saying '+x.number:'Recorded passage'}</span><div class="actions"><button class="iconbtn save" aria-label="${saved.has(x.key)?'Unsave':'Save'} saying ${esc(x.key)}" aria-pressed="${saved.has(x.key)}">${saved.has(x.key)?'★':'☆'}</button><button class="iconbtn copy">Copy</button><button class="iconbtn share">Share</button></div></div><p class="excerpt-label">${x.number?'KJV-based harmony excerpt':'KJV passage excerpt'}</p>${notes[x.key]?`<p class="reader-caveat">${esc(notes[x.key])}</p>`:''}<div class="excerpt-and-source"><div class="excerpt-body">${quoteHTML(x)}</div>${sourcePreviewHTML(x)}</div><div class="context-links" aria-label="Bible context">${contextLinks(x)}</div></article>`;
     }
     if(current!==-1)out+='</section>';
-    $('#reader').innerHTML=out.replaceAll('</section-start>','')||'<div class="empty">No sayings match. Try a shorter phrase, clear the filters, or <a href="/search-bible-phrases">search across translations</a>.</div>';
+    reader.innerHTML=out.replaceAll('</section-start>','')||'<div class="empty">No sayings match. Try a shorter phrase, clear the filters, or <a href="/search-bible-phrases">search across translations</a>.</div>';
+    for(const preview of reader.querySelectorAll('.source-preview[open]')){
+      loadSourcePreview(preview,flat.find(x=>x.key===preview.dataset.previewKey));
+    }
     $('#loadMore').hidden=results.length<=state.limit;$('#loadMore').textContent='Show next '+Math.min(24,results.length-state.limit)+' sayings';
     $('#readerPosition').textContent=`Showing ${Math.min(results.length,state.limit)} of ${results.length} matches`;
     $('#clearFilters').hidden=!state.q&&state.era==='all'&&state.book==='all'&&!state.saved;
     if(target)requestAnimationFrame(()=>{const x=flat.find(x=>x.id===target||x.key===target);document.getElementById(x?.id)?.scrollIntoView({block:'center'});});
   }
   function refresh(){state.limit=24;syncURL();render();}
-  $('#reader').addEventListener('click',async e=>{
+  reader.addEventListener('click',async e=>{
     const button=e.target.closest('button'),card=e.target.closest('.saying');if(!button||!card)return;
     const x=flat.find(x=>x.key===card.dataset.key);if(!x)return;
+    if(button.classList.contains('source-retry')){
+      const preview=button.closest('.source-preview');
+      preview.querySelector('summary').focus();
+      loadSourcePreview(preview,x);
+      return;
+    }
     if(button.classList.contains('save')){saved.has(x.key)?saved.delete(x.key):saved.add(x.key);storage.set('savedJesus',[...saved]);button.textContent=saved.has(x.key)?'★':'☆';button.setAttribute('aria-pressed',String(saved.has(x.key)));button.setAttribute('aria-label',(saved.has(x.key)?'Unsave':'Save')+' saying '+x.key);card.classList.toggle('saved',saved.has(x.key));announce(saved.has(x.key)?'Saying saved on this device.':'Saying removed from saved.');if(state.saved)render();}
     if(button.classList.contains('expand')){const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));card.querySelector('.quote').classList.toggle('quote-short',!open);button.textContent=open?'Show less':'Read full excerpt';}
     try{

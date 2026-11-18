@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const $=s=>document.querySelector(s), content=$('#bibleText'), versions=['KJV','BSB','ASV','YLT'];
-  const cache=new Map();let catalog,request=0;
+  let catalog,request=0;
   const header=document.querySelector('.topbar');
   function measureHeader(){document.documentElement.style.setProperty('--reader-header-height',Math.ceil(header.getBoundingClientRect().height)+'px');}
   measureHeader();
@@ -42,16 +42,6 @@
       row.classList.toggle('selected-verse',Boolean(start&&verse>=start&&verse<=end));
     });
   }
-  async function loadBook(version,book){
-    const key=version+'/'+book.id;if(cache.has(key))return cache.get(key);
-    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
-    try{
-      const response=await fetch('/bible-data/'+key+'.json',{signal:controller.signal});if(!response.ok)throw Error('Book unavailable');
-      const packed=await response.json();if(!window.DecompressionStream)throw Error('Browser update required');
-      const bytes=Uint8Array.from(atob(packed.gzip),c=>c.charCodeAt(0));const text=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-      const data=JSON.parse(text);cache.set(key,data);return data;
-    }finally{clearTimeout(timeout);}
-  }
   async function render(scroll=false){
     const token=++request,s=current();backLink(s.params);$('#bibleBook').value=s.book.id;$('#bibleVersion').value=s.version;
     $('#bibleChapter').replaceChildren(...Array.from({length:s.book.chapters},(_,i)=>new Option('Chapter '+(i+1),i+1)));$('#bibleChapter').value=s.chapter;
@@ -65,7 +55,7 @@
     $('#chapterCompare').href='/compare?'+compareParams;
     content.setAttribute('aria-busy','true');content.textContent='Loading chapter…';
     try{
-      const data=await loadBook(s.version,s.book);if(token!==request)return;const chapter=data.chapters.find(c=>c.chapter===s.chapter);if(!chapter)throw Error('Missing chapter');
+      const data=await window.BibleLibrary.loadBook(s.version,s.book.id);if(token!==request)return;const chapter=data.chapters.find(c=>c.chapter===s.chapter);if(!chapter)throw Error('Missing chapter');
       const fragment=document.createDocumentFragment();for(const verse of chapter.verses){const row=document.createElement('p');row.id='v'+verse.verse;row.className='bible-verse';const num=document.createElement('a');num.className='verse-number';num.href='#v'+verse.verse;num.textContent=verse.verse;num.setAttribute('aria-label','Verse '+verse.verse);row.append(num,document.createTextNode(' '+verse.text));fragment.append(row);}
       content.replaceChildren(fragment);highlight();
       const {start,end}=selection();

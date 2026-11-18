@@ -121,3 +121,16 @@ dt{font-weight:700;margin-top:22px}dd{margin:8px 0 22px}
 .reader-routes{margin-top:12px}
 .reader-routes summary{cursor:pointer;width:fit-content;min-height:44px;align-content:center;font-weight:700}
 .reader-routes .topics{margin-top:6px}
+
+.source-preview{min-width:0;margin-top:12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.source-preview summary,.source-more summary{cursor:pointer;min-height:44px;padding:8px 12px;align-content:center;font-weight:700}
+.source-preview-text{padding:0 12px 8px}
+.source-passage+.source-passage{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+.source-passage h4{margin:8px 0;color:var(--text)}
+.preview-verse{margin:6px 0;overflow-wrap:anywhere;line-height:1.5}
+.preview-verse-number{font-size:.8em;color:var(--muted);font-weight:700}
+.source-passage .context-link{display:inline-flex;min-height:44px;align-items:center}
+@media(min-width:1120px){
+  .excerpt-and-source:has(.source-preview[open]){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  .excerpt-and-source:has(.source-preview[open]) .source-preview{margin-top:0}
+}
