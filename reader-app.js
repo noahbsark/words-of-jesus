@@ -42,11 +42,23 @@
     const p=new URLSearchParams();if(state.q.trim())p.set('q',state.q.trim());if(state.era!=='all')p.set('era',state.era);if(state.book!=='all')p.set('book',state.book);if(state.saved)p.set('saved','1');
     history.replaceState(null,'','/'+(p.size?'?'+p:'')+location.hash);
   }
-  function matches(x,query){
+  function parseReference(query){
+    const parts=query.match(/^((?:[1-3]\s*)?[a-z][a-z .'-]*?)\s*(\d{1,3})(?:\s*:\s*(\d{1,3})(?:\s*[-–—]\s*(\d{1,3}))?)?$/i);
+    if(!parts)return null;
+    const [,name,chapter,first,last]=parts;
+    const book=books.find(candidate=>normalizeSearch(candidate)===normalizeSearch(name));
+    const firstVerse=first===undefined?null:Number(first);
+    return {book,chapter:Number(chapter),first:firstVerse,last:last===undefined?firstVerse:Number(last)};
+  }
+  function matches(x,query,reference){
     return (!state.saved||saved.has(x.key))
       &&(state.era==='all'||x.era===+state.era)
       &&(state.book==='all'||x.contexts.some(c=>c.book===state.book))
-      &&x.searchText.includes(query);
+      &&(reference?.book
+        ? x.contexts.some(c=>c.book===reference.book&&c.chapter===reference.chapter&&
+          (reference.first===null||(reference.first>0&&reference.last>=reference.first&&
+            c.matched&&c.verse<=reference.last&&(c.end||c.verse)>=reference.first)))
+        : x.searchText.includes(query));
   }
   function contextURL(x,c,version=state.version){
     const p=new URLSearchParams({book:slug(c.book),chapter:String(c.chapter),version,from:x.id,return:'/'+location.search+'#'+x.id});
@@ -116,11 +128,11 @@
     if (preview.open){openSources.add(x.key);loadSourcePreview(preview,x);}
     else openSources.delete(x.key);
   },true);
-  function updateSearchRoute(){
+  function updateSearchRoute(reference){
     const route=$('#readerSearchRoute'), link=$('#readerSearchLink'), query=state.q.trim();
     route.hidden=query.length<3||query.length>120;
     if(route.hidden)return;
-    const isReference=/^(?:[1-3]\s*)?[a-z][a-z .'-]*?\s*\d{1,3}(?:\s*:\s*\d{1,3}(?:\s*[-–—]\s*\d{1,3})?)?$/i.test(query);
+    const isReference=Boolean(reference);
     const target=isReference?'/find-a-passage':'/search-bible-phrases';
     const params=new URLSearchParams(isReference?{ref:query}:{q:query});
     link.href=target+'?'+params;
@@ -135,9 +147,10 @@
     return '<div class="empty">No sayings match. Try fewer words or clear the filters.</div>';
   }
   function render(target){
-    updateSearchRoute();
+    const reference=parseReference(state.q.trim());
+    updateSearchRoute(reference);
     const query=normalizeSearch(state.q);
-    const results=flat.filter(x=>matches(x,query));if(target){const i=results.findIndex(x=>x.id===target||x.key===target);if(i>=0)state.limit=Math.max(24,Math.ceil((i+1)/24)*24);}
+    const results=flat.filter(x=>matches(x,query,reference));if(target){const i=results.findIndex(x=>x.id===target||x.key===target);if(i>=0)state.limit=Math.max(24,Math.ceil((i+1)/24)*24);}
     $('#resultCount').textContent=results.length;$('#total').textContent=flat.length;$('#sectionsCount').textContent=data.sections.length;
     $('#savedBtn').setAttribute('aria-pressed',String(state.saved));$('#savedBtn').textContent=state.saved?'Show all':'Saved';
     let current=-1,out='';
