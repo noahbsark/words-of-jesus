@@ -1,0 +1,9 @@
+.reading-path{padding-inline-start:1.5rem}
+.reading-path li{padding:16px;margin:14px 0}
+.reading-path h2{margin-top:0}
+.reading-path li::marker{font-weight:700;color:var(--muted)}
+.path-progress:not([hidden]){display:flex;gap:0 14px;flex-wrap:wrap;align-items:center;margin-block:12px}
+.path-progress p{margin:0}
+.path-progress a,.path-check:not([hidden]){display:inline-flex;align-items:center;min-height:44px}
+.path-check{gap:8px;margin-top:4px;cursor:pointer}
+.path-check input{width:18px;height:18px}
