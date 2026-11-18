@@ -57,24 +57,73 @@
     return cache.get(code);
   }
 
+  function addMatch(grouped, segment, code, beginning, end, missing = 0, width = 0) {
+    const {name, book, chapter, rows} = segment;
+    const excerpt = rows.filter(row => row.start < end && row.end > beginning);
+    const first = excerpt[0].verse;
+    const last = excerpt.at(-1).verse;
+    const key = [book, chapter, first, last].join(':');
+    let match = grouped.get(key);
+    if (!match) {
+      match = {name, book, chapter, first, last, editions: new Map(), missing, width};
+      grouped.set(key, match);
+    }
+    if (missing < match.missing || (missing === match.missing && width < match.width)) {
+      match.missing = missing;
+      match.width = width;
+    }
+    match.editions.set(code, excerpt.map(row => row.text).join(' '));
+  }
+
   function collect(sources, codes, phrase) {
     const grouped = new Map();
     const needle = ' ' + phrase + ' ';
     sources.forEach((segments, index) => {
-      for (const {name, book, chapter, text, rows} of segments) {
+      for (const segment of segments) {
+        const {text} = segment;
         for (let match = text.indexOf(needle); match !== -1; match = text.indexOf(needle, match + 1)) {
-          const beginning = match + 1;
-          const end = beginning + phrase.length;
-          const excerpt = rows.filter(row => row.start < end && row.end > beginning);
-          const first = excerpt[0].verse;
-          const last = excerpt.at(-1).verse;
-          const key = [book, chapter, first, last].join(':');
-          if (!grouped.has(key)) grouped.set(key, {name, book, chapter, first, last, editions: new Map()});
-          grouped.get(key).editions.set(codes[index], excerpt.map(row => row.text).join(' '));
+          addMatch(grouped, segment, codes[index], match + 1, match + 1 + phrase.length);
         }
       }
     });
     return [...grouped.values()];
+  }
+
+  const commonWords = new Set(('about all and are but can did doe for from had has have him his how into its let may ' +
+    'not now one our out shall she some than that the their them then there these they this those thou ' +
+    'thy unto upon was were what when where which who whom will with would you your').split(' '));
+
+  function suggestions(sources, codes, phrase) {
+    const words = phrase.split(' ');
+    const terms = new Set(words.filter(word => word.length >= 3 && !commonWords.has(word)));
+    if (words.length < 3 || terms.size < 2) return [];
+    const minimum = Math.max(2, Math.ceil(terms.size * .75), terms.size - 1);
+    const maxWidth = Math.min(22, words.length + 4);
+    const grouped = new Map();
+
+    sources.forEach((segments, index) => {
+      for (const segment of segments) {
+        segment.tokens ??= [...segment.text.matchAll(/\S+/g)];
+        const tokens = segment.tokens;
+        for (let first = 0; first < tokens.length; first++) {
+          if (!terms.has(tokens[first][0])) continue;
+          const seen = new Set();
+          let best;
+          for (let last = first; last < Math.min(tokens.length, first + maxWidth); last++) {
+            const token = tokens[last];
+            if (!terms.has(token[0]) || seen.has(token[0])) continue;
+            seen.add(token[0]);
+            if (seen.size < minimum) continue;
+            best = {end: token.index + token[0].length, missing: terms.size - seen.size, width: last - first + 1};
+            if (best.missing === 0) break;
+          }
+          if (best) addMatch(grouped, segment, codes[index], tokens[first].index, best.end, best.missing, best.width);
+        }
+      }
+    });
+    return [...grouped.values()]
+      .sort((a,b) => a.missing - b.missing || a.width - b.width)
+      .slice(0, 6);
   }
 
   function element(tag, text) {
@@ -90,7 +139,7 @@
     return node;
   }
 
-  function card(match, returnPath) {
+  function card(match, returnPath, similar = false) {
     const {name, book, chapter, first, last} = match;
     const codeList = [...match.editions.keys()];
     const primary = codeList[0];
@@ -101,7 +150,8 @@
     actions.className = 'context-links';
 
     const quote = element('blockquote', match.editions.get(primary));
-    const versionNames = element('p', 'Shown in ' + primary + ' · Matches in ' + codeList.join(', '));
+    const versionNames = element('p', 'Shown in ' + primary +
+      (similar ? ' · Similar wording in ' : ' · Matches in ') + codeList.join(', '));
     versionNames.className = 'resource-note';
 
     for (const code of codeList) {
@@ -152,7 +202,17 @@
         list.replaceChildren(...matches.slice(0, limit).map(match => card(match, returnPath)));
         status.textContent = matches.length > limit ? 'Showing the first ' + limit + '. Use a longer phrase to narrow the results.' : '';
       } else {
-        list.append(element('p', 'Try fewer words or choose all four translations. The search covers the reviewed passages linked from this site’s sayings.'));
+        const nearby = suggestions(sources, codes, phrase);
+        if (nearby.length) {
+          heading.textContent = 'Similar wording';
+          list.append(element('p', 'No exact phrase matched. These passages share several words with your search.'),
+            ...nearby.map(match => card(match, returnPath, true)));
+        } else {
+          list.append(element('p', 'Try fewer words or choose all four translations.'));
+        }
+        const help = element('p');
+        help.append(link('Check familiar sayings and their sources', '/did-jesus-say-that'));
+        list.append(help);
         status.textContent = '';
       }
       results.hidden = false;
