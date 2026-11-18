@@ -116,7 +116,26 @@
     if (preview.open){openSources.add(x.key);loadSourcePreview(preview,x);}
     else openSources.delete(x.key);
   },true);
+  function updateSearchRoute(){
+    const route=$('#readerSearchRoute'), link=$('#readerSearchLink'), query=state.q.trim();
+    route.hidden=query.length<3||query.length>120;
+    if(route.hidden)return;
+    const isReference=/^(?:[1-3]\s*)?[a-z][a-z .'-]*?\s*\d{1,3}(?:\s*:\s*\d{1,3}(?:\s*[-–—]\s*\d{1,3})?)?$/i.test(query);
+    const target=isReference?'/find-a-passage':'/search-bible-phrases';
+    const params=new URLSearchParams(isReference?{ref:query}:{q:query});
+    link.href=target+'?'+params;
+    link.textContent=isReference?'Look up this Bible reference':'Search this wording in four translations';
+  }
+  function emptyResults(){
+    if(state.saved){
+      return saved.size
+        ? '<div class="empty">No saved sayings match these filters. Clear the filters or choose Show all.</div>'
+        : '<div class="empty">No saved sayings on this device yet. Choose Show all, then use the star on a saying to save it here.</div>';
+    }
+    return '<div class="empty">No sayings match. Try fewer words or clear the filters.</div>';
+  }
   function render(target){
+    updateSearchRoute();
     const query=normalizeSearch(state.q);
     const results=flat.filter(x=>matches(x,query));if(target){const i=results.findIndex(x=>x.id===target||x.key===target);if(i>=0)state.limit=Math.max(24,Math.ceil((i+1)/24)*24);}
     $('#resultCount').textContent=results.length;$('#total').textContent=flat.length;$('#sectionsCount').textContent=data.sections.length;
@@ -127,7 +146,7 @@
       out+=`<article class="saying${saved.has(x.key)?' saved':''}" id="${esc(x.id)}" data-key="${esc(x.key)}"><div class="saying-head"><span class="num">${x.number?'Saying '+x.number:'Recorded passage'}</span><div class="actions"><button class="iconbtn save" aria-label="${saved.has(x.key)?'Unsave':'Save'} saying ${esc(x.key)}" aria-pressed="${saved.has(x.key)}">${saved.has(x.key)?'★':'☆'}</button><button class="iconbtn copy">Copy</button><button class="iconbtn share">Share</button></div></div><p class="excerpt-label">${x.number?'KJV-based harmony excerpt':'KJV passage excerpt'}</p>${notes[x.key]?`<p class="reader-caveat">${esc(notes[x.key])}</p>`:''}<div class="excerpt-and-source"><div class="excerpt-body">${quoteHTML(x)}</div>${sourcePreviewHTML(x)}</div><div class="context-links" aria-label="Bible context">${contextLinks(x)}</div></article>`;
     }
     if(current!==-1)out+='</section>';
-    reader.innerHTML=out.replaceAll('</section-start>','')||'<div class="empty">No sayings match. Try a shorter phrase, clear the filters, or <a href="/search-bible-phrases">search across translations</a>.</div>';
+    reader.innerHTML=out.replaceAll('</section-start>','')||emptyResults();
     for(const preview of reader.querySelectorAll('.source-preview[open]')){
       loadSourcePreview(preview,flat.find(x=>x.key===preview.dataset.previewKey));
     }
