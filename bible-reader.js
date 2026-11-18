@@ -10,11 +10,11 @@
   function remember(v){try{localStorage.setItem('bibleVersion',JSON.stringify(v));}catch(_){}}
   function backLink(params){
     const link=$('#backToSaying'),raw=params.get('return');let target='/';
-    try{const u=new URL(raw||'/',location.origin);if(u.origin===location.origin&&/^\/(?:$|gospels$|words-of-jesus-in-john$|words-of-jesus-in-mark$|words-of-jesus-in-luke$|words-of-jesus-in-matthew$|parallel-gospels$|search-bible-phrases$|did-jesus-say-that$|who-is-speaking$|start-reading$|compare$|find-a-passage$|topics\/[a-z-]+\/$)/.test(u.pathname))target=u.pathname+u.search+u.hash;}catch(_){}
+    try{const u=new URL(raw||'/',location.origin);if(u.origin===location.origin&&/^\/(?:$|gospels$|words-of-jesus-in-john$|words-of-jesus-in-mark$|words-of-jesus-in-luke$|words-of-jesus-in-matthew$|parallel-gospels$|search-bible-phrases$|did-jesus-say-that$|who-is-speaking$|start-reading$|sermon-on-the-mount$|compare$|find-a-passage$|topics\/[a-z-]+\/$)/.test(u.pathname))target=u.pathname+u.search+u.hash;}catch(_){}
     if(target==='/'&&/^saying-\d+$|^passage-\d+-\d+$/.test(params.get('from')||''))target='/#'+params.get('from');
     link.href=target;
     const path=new URL(target,location.origin).pathname;
-    link.textContent=({'/gospels':'Back to the Gospel index','/words-of-jesus-in-john':'Back to the John guide','/words-of-jesus-in-mark':'Back to the Mark guide','/words-of-jesus-in-luke':'Back to the Luke guide','/words-of-jesus-in-matthew':'Back to the Matthew guide','/parallel-gospels':'Back to the Gospel comparison','/search-bible-phrases':'Back to phrase search','/did-jesus-say-that':'Back to the sayings guide','/who-is-speaking':'Back to the speaker guide','/start-reading':'Back to the reading path','/compare':'Back to the comparison','/find-a-passage':'Back to passage lookup'})[path]||(
+    link.textContent=({'/gospels':'Back to the Gospel index','/words-of-jesus-in-john':'Back to the John guide','/words-of-jesus-in-mark':'Back to the Mark guide','/words-of-jesus-in-luke':'Back to the Luke guide','/words-of-jesus-in-matthew':'Back to the Matthew guide','/parallel-gospels':'Back to the Gospel comparison','/search-bible-phrases':'Back to phrase search','/did-jesus-say-that':'Back to the sayings guide','/who-is-speaking':'Back to the speaker guide','/sermon-on-the-mount':'Back to the Sermon on the Mount study','/start-reading':'Back to the reading path','/compare':'Back to the comparison','/find-a-passage':'Back to passage lookup'})[path]||(
       path.startsWith('/topics/')?'Back to the topic guide':target==='/'?'Back to the sayings':'Back to your saying'
     );
   }

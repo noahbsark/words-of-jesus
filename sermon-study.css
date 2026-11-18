@@ -1,0 +1,21 @@
+@media print {
+  .topbar, .footer, .skip-link, .sermon-study .breadcrumb,
+  .sermon-study .topics, .sermon-study .sermon-print,
+  .sermon-study .study-resources { display: none !important; }
+  body, .sermon-study, .sermon-study .verse-card, .sermon-study .context-explainer {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+  .sermon-study { width: auto; max-width: none; padding: 0; }
+  .sermon-study a { color: inherit !important; }
+  .sermon-study .verse-card { break-inside: avoid; }
+  .sermon-study .lede, .sermon-study li p { color: black !important; }
+  .sermon-study .study-notes {
+    display: block;
+    min-height: 2.2em;
+    border-bottom: 1px solid #777;
+    margin: 0 0 .5em;
+  }
+}
+@media screen { .sermon-study .study-notes { display: none; } }
