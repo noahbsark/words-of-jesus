@@ -60,8 +60,9 @@ def main():
         for c in x['contexts']:
             b=book_data[c['book']];ch=b['chapters'][c['chapter']-1];assert c['verse'] in [v['verse'] for v in ch['verses']]
     reviewed, corrections=registry()
-    entries={x.get('number'):x for x in flat if x.get('number')}
-    assert reviewed.keys()<=entries.keys() and corrections.keys()<=reviewed.keys()
+    entries={x.get('number') or x['id']:x for x in flat}
+    assert reviewed.keys()==entries.keys(), ('Review coverage mismatch', reviewed.keys()^entries.keys())
+    assert corrections.keys()<=reviewed.keys()
     chapters={(b['name'].lower().replace(' ','-'),c['chapter']):{v['verse'] for v in c['verses']}
               for b in book_data.values() for c in b['chapters']}
     for rows in reviewed.values():

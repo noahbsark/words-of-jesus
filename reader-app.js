@@ -8,8 +8,9 @@
   const corrected=window.REVIEWED_QUOTE_CORRECTIONS||{};
   const notes=window.REVIEWED_CONTEXT_NOTES||{};
   const flat=data.sections.flatMap((s,si)=>s.items.map(x=>{
-    const passages=reviewed[x.number]?.map(([book,chapter,verse,end])=>({book,chapter,verse,end,matched:true,reviewed:true}));
-    return {...x,text:corrected[x.number]||x.text,contexts:passages||x.contexts,si,section:s,era:s.era,key:String(x.number||x.id)};
+    const key=String(x.number||x.id);
+    const passages=reviewed[key]?.map(([book,chapter,verse,end])=>({book,chapter,verse,end,matched:true,reviewed:true}));
+    return {...x,text:corrected[key]||x.text,contexts:passages||x.contexts,si,section:s,era:s.era,key};
   }));
   const savedValue=storage.get('savedJesus',[]), saved=new Set(Array.isArray(savedValue)?savedValue.map(String):[]);
   const state={q:'',era:'all',book:'all',saved:false,limit:24,version:storage.get('bibleVersion','KJV')};
@@ -53,7 +54,7 @@
     let current=-1,out='';
     for(const x of results.slice(0,state.limit)){
       if(current!==x.si){if(current!==-1)out+='</section>';current=x.si;out+=`<section class="section" id="section-${x.si}"><p class="eyebrow">${esc(data.eras[x.era])}</p><h2>${esc(x.section.title)}</h2><p class="section-source">${esc(x.section.source)}</p></section-start>`;}
-      out+=`<article class="saying${saved.has(x.key)?' saved':''}" id="${esc(x.id)}" data-key="${esc(x.key)}"><div class="saying-head"><span class="num">${x.number?'Saying '+x.number:'Recorded saying'}</span><div class="actions"><button class="iconbtn save" aria-label="${saved.has(x.key)?'Unsave':'Save'} saying ${esc(x.key)}" aria-pressed="${saved.has(x.key)}">${saved.has(x.key)?'★':'☆'}</button><button class="iconbtn copy">Copy</button><button class="iconbtn share">Share</button></div></div><p class="excerpt-label">KJV-based harmony excerpt</p>${notes[x.number]?`<p class="reader-caveat">${esc(notes[x.number])}</p>`:''}${quoteHTML(x)}<div class="context-links" aria-label="Bible context">${contextLinks(x)}</div></article>`;
+      out+=`<article class="saying${saved.has(x.key)?' saved':''}" id="${esc(x.id)}" data-key="${esc(x.key)}"><div class="saying-head"><span class="num">${x.number?'Saying '+x.number:'Recorded passage'}</span><div class="actions"><button class="iconbtn save" aria-label="${saved.has(x.key)?'Unsave':'Save'} saying ${esc(x.key)}" aria-pressed="${saved.has(x.key)}">${saved.has(x.key)?'★':'☆'}</button><button class="iconbtn copy">Copy</button><button class="iconbtn share">Share</button></div></div><p class="excerpt-label">${x.number?'KJV-based harmony excerpt':'KJV passage excerpt'}</p>${notes[x.key]?`<p class="reader-caveat">${esc(notes[x.key])}</p>`:''}${quoteHTML(x)}<div class="context-links" aria-label="Bible context">${contextLinks(x)}</div></article>`;
     }
     if(current!==-1)out+='</section>';
     $('#reader').innerHTML=out.replaceAll('</section-start>','')||'<div class="empty">No sayings match. Try a shorter word or clear the filters.</div>';
@@ -69,7 +70,7 @@
     if(button.classList.contains('save')){saved.has(x.key)?saved.delete(x.key):saved.add(x.key);storage.set('savedJesus',[...saved]);button.textContent=saved.has(x.key)?'★':'☆';button.setAttribute('aria-pressed',String(saved.has(x.key)));button.setAttribute('aria-label',(saved.has(x.key)?'Unsave':'Save')+' saying '+x.key);card.classList.toggle('saved',saved.has(x.key));announce(saved.has(x.key)?'Saying saved on this device.':'Saying removed from saved.');if(state.saved)render();}
     if(button.classList.contains('expand')){const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));card.querySelector('.quote').classList.toggle('quote-short',!open);button.textContent=open?'Show less':'Read full excerpt';}
     try{
-      if(button.classList.contains('copy')){await navigator.clipboard.writeText(x.text+' — KJV-based harmony excerpt; context: '+x.contexts.map(contextLabel).join('; ')+(notes[x.number]?' '+notes[x.number]:''));announce('Excerpt copied.');}
+      if(button.classList.contains('copy')){await navigator.clipboard.writeText(x.text+' — KJV-based harmony excerpt; context: '+x.contexts.map(contextLabel).join('; ')+(notes[x.key]?' '+notes[x.key]:''));announce('Excerpt copied.');}
       if(button.classList.contains('share')){const url=location.origin+'/?saying='+encodeURIComponent(x.key);if(navigator.share)await navigator.share({title:'Every Word of Jesus',url});else{await navigator.clipboard.writeText(url);announce('Link copied.');}}
     }catch(error){if(error.name!=='AbortError')announce('Your browser could not copy or share. You can copy the passage text or page address manually.');}
   });

@@ -7,15 +7,19 @@ from urllib.parse import urlencode
 
 ROOT = Path(__file__).resolve().parents[1]
 
+def read_registry_section(source, name):
+    match = re.search(rf'window\.{name} = \{{(.*?)\}};', source, re.S)
+    if not match:
+        raise ValueError(f'Missing passage registry section {name}')
+    entries = re.findall(r'^  ("[^"]+"|\d+): (.+?)(?:,)?$', match[1], re.M)
+    return {json.loads(key): json.loads(value) for key, value in entries}
+
+
 def registry():
     source = (ROOT / 'reviewed-passages.js').read_text(encoding='utf-8')
-    mappings = re.search(r'REVIEWED_PASSAGES = \{(.*?)\};', source, re.S)[1]
-    reviewed = {int(key): json.loads(value) for key, value in
-                re.findall(r'^  (\d+): (.+?)(?:,)?$', mappings, re.M)}
-    raw = re.search(r'REVIEWED_QUOTE_CORRECTIONS = \{(.*?)\};', source, re.S)[1]
-    corrections = {int(key): json.loads(value) for key, value in
-                   re.findall(r'^  (\d+): (.+?)(?:,)?$', raw, re.M)}
-    return reviewed, corrections
+    return (read_registry_section(source, 'REVIEWED_PASSAGES'),
+            read_registry_section(source, 'REVIEWED_QUOTE_CORRECTIONS'))
+
 
 def passage_url(book, chapter, first=None, last=None, **extra):
     params = {'book': book.lower().replace(' ', '-'), 'chapter': chapter, **extra}
@@ -34,9 +38,7 @@ def reference(book, chapter, first=None, last=None):
 def refresh_static_cards():
     reviewed, corrections = registry()
     source = (ROOT / 'reviewed-passages.js').read_text(encoding='utf-8')
-    raw_notes = re.search(r'REVIEWED_CONTEXT_NOTES = (\{.*?\});', source, re.S)
-    notes = {int(key): json.loads(value) for key, value in
-             re.findall(r'^  (\d+): (.+?)(?:,)?$', raw_notes[1], re.M)} if raw_notes else {}
+    notes = read_registry_section(source, 'REVIEWED_CONTEXT_NOTES')
     if not notes.keys() <= reviewed.keys():
         raise ValueError('Every context note must have a reviewed passage.')
     raw = (ROOT / 'sayings.js').read_text(encoding='utf-8')
@@ -47,7 +49,8 @@ def refresh_static_cards():
         for entry in section['items']:
             ident = entry['id']
             number = entry.get('number')
-            passages = reviewed.get(number)
+            key = number or ident
+            passages = reviewed.get(key)
             if passages:
                 links = [(('Read in context' if i == 0 else 'Also read'), *row)
                          for i, row in enumerate(passages)]
@@ -60,11 +63,11 @@ def refresh_static_cards():
             buttons = ''.join(
                 f'<a class="context-link{" primary-context" if i == 0 else ""}" href="{html.escape(paths[i])}">{lead}: {html.escape(reference(book, chapter, first, last))} →</a>'
                 for i, (lead, book, chapter, first, last) in enumerate(links))
-            title = f'Saying {number}' if number else 'Recorded saying'
-            quote = html.escape(corrections.get(number, entry['text']))
-            note = notes.get(number)
+            title = f'Saying {number} · KJV-based harmony excerpt' if number else 'Passage excerpt · KJV'
+            quote = html.escape(corrections.get(key, entry['text']))
+            note = notes.get(key)
             note_html = f'<p class="reader-caveat">{html.escape(note)}</p>' if note else ''
-            cards.append(f'<article class="saying" id="{ident}"><p class="num">{title} · KJV-based harmony excerpt</p>'
+            cards.append(f'<article class="saying" id="{ident}"><p class="num">{title}</p>'
                          f'{note_html}<blockquote class="quote"><a href="{html.escape(paths[0])}">{quote}</a></blockquote>'
                          f'<div class="context-links" aria-label="Bible context">{buttons}</div></article>')
         sections.append(f'<section class="section" id="section-{si}"><h2>{html.escape(section["title"])}</h2>'

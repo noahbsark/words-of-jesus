@@ -85,17 +85,20 @@
 
       const matches = get('passageSayings');
       matches.replaceChildren();
-      const sorted = Object.entries(window.REVIEWED_PASSAGES || {}).flatMap(([number,ranges]) =>
+      const sorted = Object.entries(window.REVIEWED_PASSAGES || {}).flatMap(([key,ranges]) =>
         ranges.filter(([name,ch,from,to]) => name === book.name && ch === chapter &&
           (first === null || (from <= last && to >= first))
-        ).map(([, , from, to]) => ({number,from,to}))
+        ).map(([, , from, to]) => ({key,from,to}))
       ).sort((a,b) => a.from-b.from);
       const seen = new Set();
-      for (const {number,from,to} of sorted) {
-        if (seen.has(number)) continue;
-        seen.add(number);
-        const range = chapter + ':' + from + (to>from?'–'+to:'');
-        appendLink(matches,'Saying '+number+' · '+book.name+' '+range,'/?saying='+number+'#saying-'+number);
+      for (const {key,from,to} of sorted) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const range = chapter + ':' + from + (to>from?'-'+to:'');
+        const numbered = /^\d+$/.test(key);
+        const title = numbered ? 'Saying '+key : 'Passage excerpt';
+        const anchor = numbered ? 'saying-'+key : key;
+        appendLink(matches,title+' · '+book.name+' '+range,'/?saying='+encodeURIComponent(key)+'#'+anchor);
       }
       get('passageMatchNote').textContent = seen.size
         ? 'These entries have reviewed references that overlap this passage. Open the chapter to see the complete text.'
